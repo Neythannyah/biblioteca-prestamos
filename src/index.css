@@ -1,0 +1,47 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: #FAF6EF;
+    --card: #FFFDF9;
+    --border: #E8DFD0;
+    --muted: #F2EBDD;
+    --foreground: #3B2F27;
+    --muted-foreground: #8A7B6C;
+    --primary: #6B4F3A;
+    --primary-foreground: #FAF6EF;
+    --secondary: #EDE3D3;
+    --ring: #A68A6D;
+    --success: #6B7F4E;
+    --warning: #B8862F;
+    --destructive: #B5523B;
+  }
+
+  body {
+    background-color: var(--background);
+    color: var(--foreground);
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  }
+}
+
+/* Scrollbar sutil acorde a la estética minimalista */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #E8DFD0;
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #A68A6D;
+}
+
