@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { Library, Lock, User, AlertCircle, ArrowRight, ShieldCheck } from 'lucide-react'
+import { Library, Lock, User, AlertCircle, ArrowRight, ShieldCheck, WifiOff } from 'lucide-react'
 import { useAuth } from '../context/AuthContext.jsx'
 import { Button } from '../components/ui/Button.jsx'
 import { Input } from '../components/ui/Input.jsx'
@@ -16,6 +16,7 @@ export function Login() {
   const navigate = useNavigate()
   const location = useLocation()
 
+  const esSupabase = (import.meta.env.VITE_DATA_SOURCE || 'mock') === 'supabase'
   const from = location.state?.from?.pathname || '/dashboard'
 
   const handleSubmit = async (e) => {
@@ -34,10 +35,16 @@ export function Login() {
   }
 
   const autocompletarDemo = () => {
-    setUsuario('encargado')
+    if (esSupabase) {
+      setUsuario('admin@mail.cl')
+    } else {
+      setUsuario('encargado')
+    }
     setClave('Biblioteca2026!')
     setError(null)
   }
+
+  const esFallaConexion = error?.toLowerCase().includes('conexión') || error?.toLowerCase().includes('conexion')
 
   return (
     <div className="min-h-screen bg-background flex flex-col justify-center items-center p-4 sm:p-6">
@@ -68,16 +75,26 @@ export function Login() {
             {error && (
               <div
                 role="alert"
-                className="mb-5 p-3.5 rounded-2xl bg-destructive/10 border border-destructive/30 text-destructive flex items-start gap-2.5 text-xs font-medium animate-in fade-in duration-150"
+                className={`mb-5 p-3.5 rounded-2xl border flex items-start gap-2.5 text-xs font-medium animate-in fade-in duration-150 ${
+                  esFallaConexion
+                    ? 'bg-warning/10 border-warning/30 text-warning-foreground'
+                    : 'bg-destructive/10 border-destructive/30 text-destructive'
+                }`}
               >
-                <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
+                {esFallaConexion ? (
+                  <WifiOff className="h-4 w-4 shrink-0 mt-0.5 text-warning" />
+                ) : (
+                  <AlertCircle className="h-4 w-4 shrink-0 mt-0.5 text-destructive" />
+                )}
                 <div className="leading-relaxed">{error}</div>
               </div>
             )}
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <Label htmlFor="usuario" required>Usuario</Label>
+                <Label htmlFor="usuario" required>
+                  {esSupabase ? 'Correo o Usuario' : 'Usuario'}
+                </Label>
                 <div className="relative">
                   <Input
                     id="usuario"
@@ -85,7 +102,7 @@ export function Login() {
                     type="text"
                     value={usuario}
                     onChange={(e) => setUsuario(e.target.value)}
-                    placeholder="encargado"
+                    placeholder={esSupabase ? 'admin@mail.cl o admin' : 'encargado'}
                     required
                     autoFocus
                   />
@@ -122,32 +139,33 @@ export function Login() {
               </div>
             </form>
 
-            {/* Acceso Rápido para Demostración */}
-            <div className="mt-6 pt-5 border-t border-border/60">
-              <div className="p-3 rounded-2xl bg-muted/60 border border-border/40 text-xs">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="font-semibold text-foreground flex items-center gap-1.5">
-                    <ShieldCheck className="h-3.5 w-3.5 text-primary" />
-                    Cuenta de prueba
-                  </span>
-                  <button
-                    type="button"
-                    onClick={autocompletarDemo}
-                    className="text-[11px] font-semibold text-primary hover:underline"
-                  >
-                    Rellenar datos
-                  </button>
-                </div>
-                <div className="font-mono text-[11px] text-muted-foreground space-y-0.5">
-                  <div>Usuario: <strong className="text-foreground">encargado</strong></div>
-                  <div>Clave: <strong className="text-foreground">Biblioteca2026!</strong></div>
+            {/* Acceso Rápido para Demostración (visible solo cuando NO sea supabase) */}
+            {!esSupabase && (
+              <div className="mt-6 pt-5 border-t border-border/60">
+                <div className="p-3 rounded-2xl bg-muted/60 border border-border/40 text-xs">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="font-semibold text-foreground flex items-center gap-1.5">
+                      <ShieldCheck className="h-3.5 w-3.5 text-primary" />
+                      Cuenta de prueba
+                    </span>
+                    <button
+                      type="button"
+                      onClick={autocompletarDemo}
+                      className="text-[11px] font-semibold text-primary hover:underline cursor-pointer"
+                    >
+                      Rellenar datos
+                    </button>
+                  </div>
+                  <div className="font-mono text-[11px] text-muted-foreground space-y-0.5">
+                    <div>Usuario: <strong className="text-foreground">encargado</strong></div>
+                    <div>Clave: <strong className="text-foreground">Biblioteca2026!</strong></div>
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
           </CardContent>
         </Card>
       </div>
     </div>
   )
 }
-

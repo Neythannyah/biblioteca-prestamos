@@ -16,6 +16,7 @@ function mapearUsuario(user, session) {
 export const authService = {
   /**
    * Inicia sesión del Encargado de Biblioteca contra Supabase Auth (RF1)
+   * Acepta tanto el email oficial ('admin@mail.cl') como el nombre de usuario ('admin' o 'encargado').
    */
   async login(usuario, clave) {
     if (!usuario?.trim() || !clave) {
@@ -23,9 +24,10 @@ export const authService = {
     }
 
     const supabase = getSupabase()
-    let email = usuario.trim().toLowerCase()
+    const inputLimpio = usuario.trim().toLowerCase()
+    let email = inputLimpio
 
-    // Si el usuario ingresó 'admin' o 'encargado', resolver al correo configurado en Supabase
+    // Si el usuario ingresó un nombre de usuario sin arroba, resolver al email correspondiente
     if (!email.includes('@')) {
       if (email === 'admin' || email === 'encargado') {
         email = 'admin@mail.cl'
@@ -34,12 +36,51 @@ export const authService = {
       }
     }
 
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password: clave
-    })
+    let data, error
+    try {
+      const res = await supabase.auth.signInWithPassword({
+        email,
+        password: clave
+      })
+      data = res.data
+      error = res.error
+    } catch (errRed) {
+      // Excepción en la petición de red (fetch / DNS / CORS / timeout)
+      throw new Error('Error de conexión: No se pudo contactar al servidor de autenticación. Verifica tu conexión a internet o la disponibilidad del servicio.')
+    }
 
-    if (error || !data?.session) {
+    if (error) {
+      const msg = (error.message || '').toLowerCase()
+      const status = error.status
+
+      // Detectar fallas de red o conexión reportadas por la respuesta
+      const esFallaConexion =
+        msg.includes('failed to fetch') ||
+        msg.includes('network') ||
+        msg.includes('connection') ||
+        msg.includes('timeout') ||
+        msg.includes('load failed') ||
+        status === 0
+
+      if (esFallaConexion) {
+        throw new Error('Error de conexión: No se pudo contactar al servidor de autenticación. Verifica tu conexión a internet o la disponibilidad del servicio.')
+      }
+
+      // Credenciales inválidas
+      if (
+        msg.includes('invalid login credentials') ||
+        msg.includes('invalid grant') ||
+        msg.includes('email not confirmed') ||
+        status === 400
+      ) {
+        throw new Error('Mostrar error de acceso: Credenciales inválidas. Verifica tu usuario y contraseña.')
+      }
+
+      // Error general
+      throw new Error(`Mostrar error de acceso: ${error.message || 'Error al autenticar'}`)
+    }
+
+    if (!data?.session) {
       throw new Error('Mostrar error de acceso: Credenciales inválidas. Verifica tu usuario y contraseña.')
     }
 
